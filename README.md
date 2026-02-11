@@ -49,13 +49,22 @@ Technical Setup
     * benchmark (using multiprocessing) reveals that av is much faster
 
 3) Audio classificaton networks for speech and music
-    * Research some models on Huggingface
+    * Research models on Huggingface
         * CLAP (zero shot capability, great for extending to different labels later)
         * BEATs (better accuracy), but bigger
     * CLAP model extracts audio embeddings and text embeddings to find cosine similarity between them.
         * Labels don't change, so text embeddings can be precomputed when initializing the classifier, reducing the computation effort
     * Verification Dataset with speech and music labels necessary
         * AudioSet fits the bill
-        * Computing suitable logit thresholds for speech and music absence based on a subset of this dataset
+        * Computing suitable logit thresholds for speech and music absence based on a subset of this dataset in thresholds.py
 
+4) Design considerations
+    * Should run on CPU for now
+    * Keep it simple ... no frameworks like Dask, Ray, Prefect, Airflow that take time to set up properly.
+    * Audio classifier could be easily GPU accelerated
+        * optimize batch size 
+        * possibly load the model to each GPU multiple times
+    * Advanced scenario for later
+        * Ray framework allows distributed compute with great GPU resource management, even infrastructure autoscaling
+        * Prefect framework for workflow orchestration and better observability 
 

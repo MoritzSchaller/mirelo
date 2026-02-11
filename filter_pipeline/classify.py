@@ -4,7 +4,7 @@ import torch
 from transformers import ClapModel, ClapProcessor
 
 
-class HtsatAudioClassifier:
+class AudioClassifier:
     def __init__(self, labels: list[str] = ("music", "speech")):
         self.labels = labels
         self.device = "cuda" if torch.cuda.is_available() else "cpu"

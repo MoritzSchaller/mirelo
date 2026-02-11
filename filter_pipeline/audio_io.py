@@ -1,4 +1,5 @@
 import subprocess
+import io
 
 from pathlib import Path
 
@@ -37,7 +38,7 @@ def load_audio_ffmpeg(path: Path, sr: int=48000) -> np.ndarray[np.float32]:
 
 
 
-def load_audio_av(path: Path, sr: int=48000) -> np.ndarray:
+def load_audio_av(source: Path | str | bytes, sr: int=48000) -> np.ndarray:
     """
     Extract audio from video file as numpy array using pyav. 
     This is faster for many small files because it does not spawn a new process for each extracton.
@@ -45,7 +46,11 @@ def load_audio_av(path: Path, sr: int=48000) -> np.ndarray:
 
     resampler = av.AudioResampler(format="fltp", layout="mono", rate=sr)
     
-    with av.open(str(path)) as container:
+    if isinstance(source, bytes):
+        source = io.BytesIO(source)
+    else:
+        source = str(source)
+    with av.open(source) as container:
         frames = [
             out_frame.to_ndarray()[0]
             for packet in container.demux(audio=0)
