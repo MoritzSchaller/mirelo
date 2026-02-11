@@ -51,9 +51,18 @@ def _download_file(filename: str) -> Path:
 
 def _unpack(args=tuple[Path, Path]):
     file, destination = args
+
+    flag = file.with_suffix(".unpacked_flag")
+    if flag.exists():
+        return 
+    
     print(f"Unpacking {file} ...")
     with tarfile.open(file, "r:gz") as f:
         f.extractall(destination)
+
+    flag.touch()
+    
+
 
 
 def _unpack_multiple(files: list[Path], destination: Path):
@@ -74,7 +83,7 @@ def get_vggsound_dataset(n_shards: int=20) -> pd.DataFrame:
     print("Unpacking ...")
     _unpack_multiple(shards, UNPACKED_DIR)
 
-    print("Preparing DataFrame")
+    print("Preparing dataset DataFrame ...")
     index_df = _build_dataset_index(index_file)
     files_df = _build_file_index(UNPACKED_DIR)
     matched_df = index_df.join(files_df, on="file_id", how="inner")
