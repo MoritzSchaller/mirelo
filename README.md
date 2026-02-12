@@ -50,21 +50,36 @@ Technical Setup
 
 3) Audio classificaton networks for speech and music
     * Research models on Huggingface
-        * CLAP (zero shot capability, great for extending to different labels later)
-        * BEATs (better accuracy), but bigger
-    * CLAP model extracts audio embeddings and text embeddings to find cosine similarity between them.
-        * Labels don't change, so text embeddings can be precomputed when initializing the classifier, reducing the computation effort
+        * CLAP: zero shot capability, great for extending to different labels later, promising
+        * BEATs: better accuracy, big model
+        * YamNet: tiny model, ideal for CPU
     * Verification Dataset with speech and music labels necessary
         * AudioSet fits the bill
-        * Computing suitable logit thresholds for speech and music absence based on a subset of this dataset in thresholds.py
+        * Use subset of test split only
+        * Find thresholds for speech and music scores from score historgrams (see thresholds.py) 
+    * Try CLAP model 
+        * Audio and text embeddings with cosine similarity between them
+        * Labels don't change -> precompute text embeddings on init
+        * Label separation ends up beeing really bad (see histogram_clap.svg)
+    * Try YamNet
+        * Small model can be loaded to each CPU worker process
+        * Label separation looks much better (see histogram_yamnet.png)
+    * Decision: YamNet
 
 4) Design considerations
-    * Should run on CPU for now
-    * Keep it simple ... no frameworks like Dask, Ray, Prefect, Airflow that take time to set up properly.
-    * Audio classifier could be easily GPU accelerated
+    * Should run on a local CPU for easy development, cloud can come later
+    * Use multiprocessing for speed
+    * Use parquet files for efficient data storage
+    * Keep it simple: no frameworks like Dask, Ray, Prefect, Airflow that take time to set up properly.
+    * Audio CLAP and YamNet could be easily GPU accelerated later
+        * enable CUDA
         * optimize batch size 
-        * possibly load the model to each GPU multiple times
+        * possibly load the model to each GPU multiple times for best saturation
     * Advanced scenario for later
-        * Ray framework allows distributed compute with great GPU resource management, even infrastructure autoscaling
-        * Prefect framework for workflow orchestration and better observability 
+        * Ray framework allows distributed compute and storage with great GPU resource management
+        * Prefect framework for workflow orchestration and better observability
 
+5) How to check quality
+    * Run on subset of data to measure execution time
+    * Manually listen to filtered results (both included and excluded items)
+    * Check accuracy on labeled datasets
