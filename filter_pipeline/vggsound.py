@@ -1,9 +1,12 @@
+import os
+import tarfile
+
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
 
-import tarfile
-
 import pandas as pd
+
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 import huggingface_hub
 
 

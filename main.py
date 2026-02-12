@@ -13,7 +13,7 @@ from filter_pipeline.classify import AudioClassifier, classify_multiprocessed
 def main():
     
     print("Loading VGGSound dataset ...")
-    df = get_vggsound_dataset(n_shards=1)
+    df = get_vggsound_dataset(n_shards=2)
     # df = df.head()
 
     print("Classifying ...")
