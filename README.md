@@ -1,13 +1,13 @@
-### Mirelo Technical Test
+# Mirelo Technical Test
 
 ## Task specification
 
-# Preparation:
+### Preparation:
 
 Use the VGGSound dataset (https://huggingface.co/datasets/Loie/VGGSound/tree/main)
 If you are constrained by storage, bandwidth, or compute, it is perfectly fine to work with a representative subset of the dataset, as long as you clearly explain your approach and assumptions.
 
-# Task
+### Task
 
 We would like you to design and execute a filtering pipeline to identify videos in the VGGSound dataset that contain only sound effects.
 
@@ -15,7 +15,7 @@ In this context, sound effects are defined as all sounds that are not music and 
 For each selected video, we would like a corresponding text description that describes the audio content.
 The final output should be a JSON Lines file named sfx_filtered.jsonl.
 
-# Expected Minimal Output Format
+### Expected Minimal Output Format
 
 ```
 { "video_id": "id_to_video1", "audio_text_description": "Sound of a bird singing" } 
@@ -25,7 +25,7 @@ The final output should be a JSON Lines file named sfx_filtered.jsonl.
 { "video_id": "id_to_videoN", "audio_text_description": "..." }
 ```
 
-# Additional Considerations
+### Additional Considerations
 
 Please take efficiency considerations into account (e.g., scalability, runtime, data handling) and any design trade-offs you make. In the end such pipelines need to run on millions of files.
 Describe how you would check the quality of your solution (both in terms of data quality and performance).
