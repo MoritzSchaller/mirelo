@@ -13,7 +13,7 @@ from filter_pipeline.classify import AudioClassifier, classify_multiprocessed
 def main():
     
     print("Loading VGGSound dataset ...")
-    df = get_vggsound_dataset(n_shards=2)
+    df = get_vggsound_dataset(n_shards=1)
     # df = df.head()
 
     print("Classifying ...")
@@ -32,7 +32,7 @@ def main():
     df = df.drop(columns=["YouTube ID", "start seconds", "train/test split", "path"])
     df.columns = ["audio_text_description", "video_id", "speech_score", "music_score"]
 
-    df.to_json("result_filtered.jsonl", orient="records", lines=True)
+    df.to_json("sfx_filtered.jsonl", orient="records", lines=True)
     
     print("Done!")
 

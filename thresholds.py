@@ -3,12 +3,15 @@ This module computes the logit thresholds for 'speech' and 'music' labels.
 A small subset of AudioSet is used as a reference.
 """
 
+import os
 from pathlib import Path
 
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+
+os.environ["HF_HUB_ENABLE_HF_TRANSFER"] = "1"
 from datasets import load_dataset
 
 from filter_pipeline.classify import AudioClassifier, classify_multiprocessed
