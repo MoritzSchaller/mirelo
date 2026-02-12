@@ -3,7 +3,6 @@ This module computes the logit thresholds for 'speech' and 'music' labels.
 A small subset of AudioSet is used as a reference.
 """
 
-from multiprocessing import Pool, cpu_count
 from pathlib import Path
 
 import pandas as pd
@@ -11,10 +10,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 from datasets import load_dataset
-from tqdm import tqdm
 
-from filter_pipeline.classify import AudioClassifier
-from filter_pipeline.audio_io import load_audio_av
+from filter_pipeline.classify import AudioClassifier, classify_multiprocessed
 
 
 def download_validation_dataset(parquet_file: Path, n_samples: int):
@@ -35,35 +32,17 @@ def compute_classification_logits(validation_file: Path, logits_file: Path):
     
     df = pd.read_parquet(validation_file)
     
-    df['audio'] = df['audio'].str['bytes']
+    df["audio"] = df["audio"].str["bytes"]
     df = df.drop(columns=["labels"])
     
-    classifier = AudioClassifier(["speech", "music"])
-    sr = classifier.sr
+    label_scores_df = classify_multiprocessed(df["audio"])
 
-    batch_size = 64
-    batch_indices = range(0, len(df), batch_size)
-    n_batches = len(df) // batch_size
+    df = df.drop(columns=["audio"])
+    df = pd.concat((df.reset_index(), label_scores_df), axis=1)
 
-    with Pool(cpu_count()) as p:
+    df.to_parquet(logits_file)
 
-        processed_batches: list[pd.DataFrame] = []
-        for i in tqdm(batch_indices, total=n_batches):
-
-            batch = df.iloc[i:i + batch_size] 
-            audios = p.map(load_audio_av, batch["audio"])
-
-            batch_results = classifier.classify_batch(audios)
-            batch_results_df = pd.DataFrame(batch_results)
-
-            combined_df = pd.concat([batch.reset_index(drop=True).drop(columns=["audio"]), batch_results_df], axis=1)
-            processed_batches.append(combined_df)
-
-
-    classified_df = pd.concat(processed_batches, ignore_index=True)
-    classified_df.to_parquet(logits_file)
-
-    print(classified_df)
+    print(df)
 
 
 def compute_thresholds(logits_file: Path) -> dict[str, float]:
@@ -81,14 +60,14 @@ def _plot_histograms(df: pd.DataFrame):
 
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
-    sns.histplot(data=df, x='speech', hue='has_speech', bins=50, alpha=0.6, ax=axes[0])
+    sns.histplot(data=df, x='speech_score', hue='has_speech', bins=50, alpha=0.6, ax=axes[0])
     axes[0].axvline(0, color='green', linestyle='--', linewidth=2)
 
-    sns.histplot(data=df, x='music', hue='has_music', bins=50, alpha=0.6, ax=axes[1])
+    sns.histplot(data=df, x='music_score', hue='has_music', bins=50, alpha=0.6, ax=axes[1])
     axes[1].axvline(0, color='green', linestyle='--', linewidth=2)
 
     plt.tight_layout()
-    plt.show()
+    plt.savefig("histogramm_yamnet.png")
     
     
 
@@ -100,7 +79,7 @@ def main():
         print("Validation data file not found. Downloading.")
         download_validation_dataset(validation_file, 2000)
     
-    logits_file = Path(f"data/validation_{n_samples}_with_logits.parquet")
+    logits_file = Path(f"data/validation_{n_samples}_with_yamnet_scores.parquet")
     if not logits_file.exists():
         print("Computing classification logits")
         compute_classification_logits(validation_file, logits_file)

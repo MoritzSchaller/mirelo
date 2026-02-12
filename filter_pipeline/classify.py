@@ -1,42 +1,66 @@
-import numpy as np
-import torch
 
-from transformers import ClapModel, ClapProcessor
+import os
+
+from typing import Iterable
+from pathlib import Path
+from multiprocessing import Pool, cpu_count
+
+os.environ['CUDA_VISIBLE_DEVICES'] = '-1'  # Disable GPU
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+import tensorflow_hub as hub
+import pandas as pd
+import numpy as np
+
+from tqdm import tqdm
+
+from filter_pipeline.audio_io import load_audio_av
 
 
 class AudioClassifier:
-    def __init__(self, labels: list[str] = ("music", "speech")):
-        self.labels = labels
-        self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.sr = 48000
-        self.processor = ClapProcessor.from_pretrained("laion/clap-htsat-unfused")
-        self.model = ClapModel.from_pretrained("laion/clap-htsat-unfused").to(self.device)
-        self.model.eval()
+    def __init__(self):
+        self.model = hub.load('https://tfhub.dev/google/yamnet/1')
+        self.sr = 16000
+        self.music_index = 132
+        self.speech_index = 0
 
-        # Precompute text embeddings
-        with torch.no_grad():
-            text_inputs = self.processor(
-                text=self.labels,
-                return_tensors="pt",
-                padding=True,
-            ).to(self.device)
-            self.text_embeds = self.model.get_text_features(**text_inputs).pooler_output
+    def process_file(self, path: Path) -> dict[str]:
+        """Run music and speech classification on a single audio file."""
+        
+        audio = load_audio_av(path, self.sr)
+        
+        scores, embeddings, spectrogram = self.model(audio)
+        scores: np.ndarray = scores.numpy()
+        
+        speech_score = scores[:, self.speech_index] # ~20 scores
+        music_score = scores[:, self.music_index]
+        
+        speech_score = _mean_of_n_highest(speech_score, 3)
+        music_score = _mean_of_n_highest(music_score, 3)
 
-    @torch.no_grad()
-    def classify_batch(self, audios: list[np.ndarray]):
-        audio_inputs = self.processor(
-            audio=audios,
-            sampling_rate=self.sr,
-            return_tensors="pt",
-            padding=True,
-        ).to(self.device)
-
-        audio_embeds = self.model.get_audio_features(**audio_inputs).pooler_output 
-        logit_scale_audio = self.model.logit_scale_a.exp()
-        logits_per_audio = torch.matmul(audio_embeds, self.text_embeds.t()) * logit_scale_audio
-
-        return [
-            {label: float(logit) for label, logit in zip(self.labels, row)}
-            for row in logits_per_audio
-        ]
+        return speech_score, music_score
     
+
+def classify_multiprocessed(sources: Iterable[Path|str|bytes]) -> pd.DataFrame:
+    with Pool(cpu_count(), _init_worker) as p:
+        scores = tuple(tqdm(
+            p.imap(_process_wrapper, sources),
+            desc="Classifying Audio Files",
+            total=len(sources)
+        ))
+
+    df = pd.DataFrame.from_records(scores, columns=("speech_score", "music_score"))
+    return df
+
+
+def _init_worker():
+    global classifier 
+    classifier = AudioClassifier()
+
+
+def _process_wrapper(path):
+    return classifier.process_file(path)
+
+
+def _mean_of_n_highest(x: np.ndarray, n: int=5) -> float:
+    return float(np.sort(x)[-5:].mean())
