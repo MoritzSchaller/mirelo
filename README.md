@@ -1,39 +1,35 @@
 ### Mirelo Technical Test
 
+## Task specification
 
-Using the VGGSound dataset (https://huggingface.co/datasets/Loie/VGGSound/tree/main)
+# Preparation:
 
+Use the VGGSound dataset (https://huggingface.co/datasets/Loie/VGGSound/tree/main)
+If you are constrained by storage, bandwidth, or compute, it is perfectly fine to work with a representative subset of the dataset, as long as you clearly explain your approach and assumptions.
 
-## Task
+# Task
 
 We would like you to design and execute a filtering pipeline to identify videos in the VGGSound dataset that contain only sound effects.
 
-* In this context, sound effects are defined as all sounds that are not music and not speech.
-* For each selected video, we would like a corresponding text description that describes the audio content.
-* The final output should be a JSON Lines file named sfx_filtered.jsonl.
+In this context, sound effects are defined as all sounds that are not music and not speech.
+For each selected video, we would like a corresponding text description that describes the audio content.
+The final output should be a JSON Lines file named sfx_filtered.jsonl.
 
-Expected Minimal Output Format:
+# Expected Minimal Output Format
 
+```
 { "video_id": "id_to_video1", "audio_text_description": "Sound of a bird singing" } 
 { "video_id": "id_to_video2", "audio_text_description": "Car engine and road noise" } 
 { "video_id": "id_to_video3", "audio_text_description": "..." } 
 ... 
 { "video_id": "id_to_videoN", "audio_text_description": "..." }
+```
 
 # Additional Considerations
 
-* Please take efficiency considerations into account (e.g., scalability, runtime, data handling) and any design trade-offs you make. In the end such pipelines need to run on millions of files.
-* Describe how you would check the quality of your solution (both in terms of data quality and performance).
-* You are free to use any tools, libraries, models, or frameworks you consider appropriate (open-source or otherwise). Please briefly justify your choices.
-
-There is no single “correct” solution. We are primarily interested in your reasoning, design decisions, and clarity of thought.
-Technical Setup
-
-* Please set up an environment where you can run your prepared homework live (e.g. on your local machine using the CPU, or a simple Google Colab).
-* If you need access to a dedicated GPU please let us know so we can provide you with the resources.
-    For the interview, please turn off AI assistance.
-
-
+Please take efficiency considerations into account (e.g., scalability, runtime, data handling) and any design trade-offs you make. In the end such pipelines need to run on millions of files.
+Describe how you would check the quality of your solution (both in terms of data quality and performance).
+You are free to use any tools, libraries, models, or frameworks you consider appropriate (open-source or otherwise). Please briefly justify your choices.
 
 ## Solution
 
@@ -41,6 +37,7 @@ Technical Setup
     * VGGSound does not adhere to modern huggingface dataset format
         * has to be manually downloaded and indexed
         * filter_pipeline.vggsound acts as an adapter module
+        * datafiles in 17GB tar.gz archives -> limiting myself to a specified amount of archives (1) so that presetation is quick
 
 2) Lots of mp4 files to extract
     * compared two different ways of decoding
@@ -55,9 +52,9 @@ Technical Setup
         * YamNet: tiny model, ideal for CPU
     * Verification Dataset with speech and music labels necessary
         * AudioSet fits the bill
-        * Use subset of test split only
+        * Use subset of test split only (because YamNet was trained on AudioSet)
         * Find thresholds for speech and music scores from score historgrams (see thresholds.py) 
-    * Try CLAP model 
+    * Try CLAP model (see clap branch)
         * Audio and text embeddings with cosine similarity between them
         * Labels don't change -> precompute text embeddings on init
         * Label separation ends up beeing really bad (see histogram_clap.svg)
