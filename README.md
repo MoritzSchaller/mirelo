@@ -1,5 +1,20 @@
 # Mirelo Technical Test
 
+## Install and run
+
+1) Install [astral uv](https://docs.astral.sh/uv/getting-started/installation/)
+
+2) Install dependencies
+```
+uv sync
+```
+
+3) Run pipeline
+
+```
+uv run main.py
+```
+
 ## Task specification
 
 ### Preparation:
