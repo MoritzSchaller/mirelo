@@ -83,7 +83,7 @@ def get_vggsound_dataset(n_shards: int=20) -> pd.DataFrame:
         n_shards=20
     
     index_file = _download_file(INDEX_FILE)
-    shards = [_download_large_file(shard, URL+shard) for shard in SHARDS[:n_shards]]
+    shards = [_download_large_file(URL + shard, DATA_DIR / shard) for shard in SHARDS[:n_shards]]
 
     print("Unpacking ...")
     _unpack_multiple(shards, UNPACKED_DIR)
@@ -96,5 +96,8 @@ def get_vggsound_dataset(n_shards: int=20) -> pd.DataFrame:
     return matched_df
 
 def _download_large_file(url: str, destination: Path):
-    subprocess.run(["curl", "-o", str(destination), url])
-    
+    print(f"Downloading {url} to {destination}")
+    subprocess.run(
+        ["curl", "-L", "-C", "-", "-o", str(destination), url],
+        check=True
+    )
