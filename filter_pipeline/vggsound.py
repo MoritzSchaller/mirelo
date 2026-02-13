@@ -101,3 +101,5 @@ def _download_large_file(url: str, destination: Path):
         ["curl", "-L", "-C", "-", "-o", str(destination), url],
         check=True
     )
+
+    return destination

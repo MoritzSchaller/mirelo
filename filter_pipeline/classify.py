@@ -63,4 +63,4 @@ def _process_wrapper(path):
 
 
 def _mean_of_n_highest(x: np.ndarray, n: int=5) -> float:
-    return float(np.sort(x)[-5:].mean())
+    return float(np.sort(x)[n:].mean())
