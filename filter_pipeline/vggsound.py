@@ -1,5 +1,6 @@
 import os
 import tarfile
+import subprocess
 
 from pathlib import Path
 from multiprocessing import Pool, cpu_count
@@ -16,6 +17,7 @@ UNPACKED_DIR = DATA_DIR / "unpacked"
 
 INDEX_FILE = "vggsound.csv"
 SHARDS = [f"vggsound_{i:02d}.tar.gz" for i in range(20)]
+URL = "https://huggingface.co/datasets/Loie/VGGSound/resolve/main/"
 
 def _build_file_index(folder: Path) -> pd.DataFrame:
     """Indexes all files in a given folder and maps them to """
@@ -81,7 +83,7 @@ def get_vggsound_dataset(n_shards: int=20) -> pd.DataFrame:
         n_shards=20
     
     index_file = _download_file(INDEX_FILE)
-    shards = [_download_file(shard) for shard in SHARDS[:n_shards]]
+    shards = [_download_large_file(shard, URL+shard) for shard in SHARDS[:n_shards]]
 
     print("Unpacking ...")
     _unpack_multiple(shards, UNPACKED_DIR)
@@ -92,3 +94,7 @@ def get_vggsound_dataset(n_shards: int=20) -> pd.DataFrame:
     matched_df = index_df.join(files_df, on="file_id", how="inner")
 
     return matched_df
+
+def _download_large_file(url: str, destination: Path):
+    subprocess.run(["curl", "-o", str(destination), url])
+    
